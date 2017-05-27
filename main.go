@@ -1,59 +1,42 @@
 package main
 
 import (
-	"crypto/tls"
+	"flag"
 	"fmt"
 	"log"
-	"net"
+	"net/http"
+	"os"
 
-	mgo "gopkg.in/mgo.v2"
-	"gopkg.in/mgo.v2/bson"
+	"github.com/SealTV/handmade-shope/daemon"
 )
 
-type Person struct {
-	Name  string
-	Phone string
+var assetsPath string
+
+func processFlags() *daemon.Config {
+	cfg := &daemon.Config{}
+
+	flag.StringVar(&cfg.ListenSpec, "listen", "localhost:3000", "HTTP listen spec")
+	flag.StringVar(&cfg.Db.Host, "host", "localhost:12017", "Mongo serve host")
+	flag.StringVar(&cfg.Db.Username, "user", "user", "Mongo user")
+	flag.StringVar(&cfg.Db.Password, "password", "", "Mongo password")
+	// flag.StringVar(&cfg.Db.ConnectString, "db-connect", "host=/var/run/postgresql dbname=gowebapp sslmode=disable", "DB Connect String")
+	flag.StringVar(&assetsPath, "assets-path", "assets", "Path to assets dir")
+	flag.Parse()
+	return cfg
+}
+
+func setupHttpAssets(cfg *daemon.Config) {
+	log.Printf("Assets served from %q.", assetsPath)
+	cfg.UI.Assets = http.Dir(assetsPath)
 }
 
 func main() {
-	const (
-		Host     = "shopdb.documents.azure.com:10255"
-		Username = "shopdb"
-		Password = "beyowzrb8wZytMpIQ50IvWTzfOZaSstSLtAloPZyiy2Jv0oUN5CZqs59YQEV73Mzz0QkZKqNmqZ9mgSXUJy1kw=="
-		Database = "test"
-	)
+	fmt.Println(os.Args)
+	cfg := processFlags()
+	fmt.Println(cfg)
 
-	session, err := mgo.DialWithInfo(&mgo.DialInfo{
-		Addrs:    []string{Host},
-		Username: Username,
-		Password: Password,
-		Database: Database,
-		DialServer: func(addr *mgo.ServerAddr) (net.Conn, error) {
-			return tls.Dial("tcp", addr.String(), &tls.Config{})
-		},
-	})
-	if err != nil {
-		panic(err)
+	setupHttpAssets(cfg)
+	if err := daemon.Run(cfg); err != nil {
+		log.Printf("Error in main(): %v", err)
 	}
-	defer session.Close()
-
-	fmt.Printf("Connected to %v!\n", session.LiveServers())
-
-	// Optional. Switch the session to a monotonic behavior.
-	session.SetMode(mgo.Monotonic, true)
-
-	c := session.DB("test").C("people")
-	err = c.Insert(&Person{"Ale", "+55 53 8116 9639"},
-		&Person{"Cla", "+55 53 8402 8510"})
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	result := Person{}
-	err = c.Find(bson.M{"name": "Ale"}).One(&result)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	fmt.Println("Phone:", result.Phone)
 }
