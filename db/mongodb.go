@@ -57,7 +57,6 @@ func InitMongoDb(cfg MongoConfig) (*MongoDB, error) {
 
 	// Optional. Switch the session to a monotonic behavior.
 	session.SetMode(mgo.Monotonic, true)
-
 	return p, nil
 }
 
@@ -68,6 +67,7 @@ func (m *MongoDB) Close() {
 func (m *MongoDB) GetAllUsers() ([]*model.User, error) {
 	result := []*model.User{}
 	err := m.users.Find(bson.M{}).All(&result)
+	fmt.Println(result)
 	return result, err
 }
 
