@@ -12,7 +12,8 @@ import (
 // standalone functions that will be used as route handlers.
 func InitIndexPage(m *model.Model) func(c *gin.Context) {
 	return func(c *gin.Context) {
-		users, err := m.GetAllUsers()
+		users, err := m.Users()
+
 		if err != nil {
 			c.HTML(http.StatusInternalServerError, "idnex.html", gin.H{
 				"title": "Error",

@@ -27,8 +27,6 @@ func processFlags() *config {
 	flag.StringVar(&cfg.DB.Host, "host", "localhost:12017", "Mongo serve host")
 	flag.StringVar(&cfg.DB.Username, "user", "user", "Mongo user")
 	flag.StringVar(&cfg.DB.Password, "password", "", "Mongo password")
-	// flag.StringVar(&cfg.Db.ConnectString, "db-connect", "host=/var/run/postgresql dbname=gowebapp sslmode=disable", "DB Connect String")
-	// flag.StringVar(&assetsPath, "assets-path", "assets", "Path to assets dir")
 	flag.Parse()
 	return cfg
 }
