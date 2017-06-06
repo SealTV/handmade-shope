@@ -40,7 +40,7 @@ func main() {
 	cfg := processFlags()
 	fmt.Println(cfg)
 
-	db, err := db.InitMongoDb(cfg.DB)
+	db, err := db.InitMongoDB(cfg.DB.Host)
 	if err != nil {
 		log.Printf("Error initializing database: %v\n", err)
 		log.Fatal(err)

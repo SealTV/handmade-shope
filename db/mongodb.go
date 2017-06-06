@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	database = "Shop"
+	database = "shop"
 	products = "products"
 	users    = "users"
 )
@@ -43,6 +43,26 @@ func InitMongoDb(cfg MongoConfig) (*MongoDB, error) {
 		},
 	})
 
+	if err != nil {
+		panic(err)
+	}
+
+	p := &MongoDB{
+		session:  session,
+		users:    session.DB(database).C(users),
+		products: session.DB(database).C(products),
+	}
+
+	fmt.Printf("Connected to %v!\n", session.LiveServers())
+
+	// Optional. Switch the session to a monotonic behavior.
+	session.SetMode(mgo.Monotonic, true)
+	return p, nil
+}
+
+// InitMongoDB - initialize MongoDB client
+func InitMongoDB(conn string) (*MongoDB, error) {
+	session, err := mgo.Dial(conn)
 	if err != nil {
 		panic(err)
 	}

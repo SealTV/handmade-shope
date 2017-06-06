@@ -8,7 +8,7 @@ import (
 
 // Product model
 type Product struct {
-	ID         bson.ObjectId `bson:"_id" json:"id"`
+	ID         bson.ObjectId `bson:"_id,omitempty" json:"id"`
 	Name       string        `bson:"name" json:"name"`
 	Desription string        `bson:"description" json:"description"`
 	Image      []byte        `bson:"image" json:"image"`
