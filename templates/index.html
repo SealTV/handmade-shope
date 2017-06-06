@@ -1,17 +1,27 @@
 <!--index.html-->
 <!--Embed the header.html template at this location-->
-{{ template "header.html" .}}
-    <h1>Hello Gin!</h1>
+<!doctype html>
+<html>
 
-    {{range .users }}
-        <!--Create the link for the article based on its ID-->
-        <a href="/article/view/{{.ID}}">
-        <!--Display the title of the article -->
-        <h2>{{.UserName}}</h2>
-        </a>
-        <!--Display the content of the article-->
-        <p>{{.Email}} | {{.Password}}</p>
-    {{end}}
+{{ template "header.html" .}}
+<body>
+    <!--Embed the menu.html template at this location-->
+    {{ template "menu.html" . }}
+    <div class="container">
+        <h2>Hello Gin!</h2>
+
+        {{range .users }}
+            <!--Create the link for the article based on its ID-->
+            <a href="/article/view/{{.ID}}">
+            <!--Display the title of the article -->
+            <h2>{{.UserName}}</h2>
+            </a>
+            <!--Display the content of the article-->
+            <p>{{.Email}} | {{.Password}}</p>
+        {{end}}
+    </div>
+</body>
 
 <!--Embed the footer.html template at this location-->
 {{ template "footer.html" .}}
+</html>

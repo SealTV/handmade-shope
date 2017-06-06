@@ -33,6 +33,9 @@ func processFlags() *config {
 
 func initializeRoutes() { // определение роута главной страницы
 	router.GET("/", ui.InitIndexPage(m))
+	router.GET("/products", ui.InitProductsPage(m))
+	router.GET("/about", ui.AboutPage)
+	router.GET("/contacts", ui.ContactsPage)
 }
 
 func main() {

@@ -1,0 +1,28 @@
+<!--products.html-->
+<!--Embed the header.html template at this location-->
+<!doctype html>
+<html>
+
+{{ template "header.html" .}}
+<body>
+    <!--Embed the menu.html template at this location-->
+    {{ template "menu.html" . }}
+    <div class="container body-content">
+       <div class="container">
+            <h1>Products!</h1>
+       </div>
+        {{range .products }}
+            <!--Create the link for the article based on its ID-->
+            <a href="/article/view/{{.ID}}">
+            <!--Display the title of the article -->
+            <h2>{{.UserName}}</h2>
+            </a>
+            <!--Display the content of the article-->
+            <p>{{.Email}} | {{.Password}}</p>
+        {{end}}
+    </div>
+</body>
+
+<!--Embed the footer.html template at this location-->
+{{ template "footer.html" .}}
+</html>

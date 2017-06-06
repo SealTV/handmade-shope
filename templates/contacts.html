@@ -1,0 +1,17 @@
+<!--cotacts.html-->
+<!--Embed the header.html template at this location-->
+<!doctype html>
+<html>
+
+{{ template "header.html" .}}
+<body>
+    <!--Embed the menu.html template at this location-->
+    {{ template "menu.html" . }}
+    <div class="container body-content">
+        <h1>Cotacts!</h1>
+    </div>
+</body>
+
+<!--Embed the footer.html template at this location-->
+{{ template "footer.html" .}}
+</html>
