@@ -20,9 +20,9 @@ func TestNew(t *testing.T) {
 
 func TestUsers(t *testing.T) {
 	var db DBMock
-	db.SetProduct(Product{ID: bson.NewObjectId(), Name: "name1", Desription: "Desription1", Price: 1})
-	db.SetProduct(Product{ID: bson.NewObjectId(), Name: "name2", Desription: "Desription2", Price: 2})
-	db.SetProduct(Product{ID: bson.NewObjectId(), Name: "name3", Desription: "Desription3", Price: 3})
+	db.SetProduct(Product{ID: bson.NewObjectId(), Name: "name1", Description: "Desription1", Price: 1})
+	db.SetProduct(Product{ID: bson.NewObjectId(), Name: "name2", Description: "Desription2", Price: 2})
+	db.SetProduct(Product{ID: bson.NewObjectId(), Name: "name3", Description: "Desription3", Price: 3})
 	m := New(&db)
 
 	if p, _ := m.Products(); len(p) != 3 {

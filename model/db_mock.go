@@ -62,7 +62,7 @@ func (db *DBMock) UpdateProduct(p Product) error {
 	for _, pp := range db.products {
 		if p.ID == p.ID {
 			pp.Name = p.Name
-			pp.Desription = p.Desription
+			pp.Description = p.Description
 			pp.Image = p.Image
 			pp.Price = p.Price
 			pp.UpdatedOn = time.Now()
