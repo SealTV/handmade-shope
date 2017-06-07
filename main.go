@@ -39,6 +39,33 @@ func initializeRoutes() { // определение роута главной с
 }
 
 func main() {
+	sqlite, err := db.InitSqlite("storage.sqlite")
+
+	if err != nil {
+		log.Printf("Error initializing database: %v\n", err)
+		log.Fatal(err)
+	}
+
+	users, err := sqlite.GetAllUsers()
+
+	if err != nil {
+		log.Printf("Error initializing database: %v\n", err)
+		log.Fatal(err)
+	}
+
+	for _, user := range users {
+		fmt.Println(*user)
+	}
+	user, err := sqlite.GetUser("SealTV", "pass")
+
+	if err != nil {
+		log.Printf("Error initializing database: %v\n", err)
+		log.Fatal(err)
+	}
+	fmt.Println(*user)
+
+	return
+
 	fmt.Println(os.Args)
 	cfg := processFlags()
 	fmt.Println(cfg)

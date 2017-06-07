@@ -4,93 +4,155 @@ import (
 	"database/sql"
 
 	"github.com/SealTV/handmade-shope/model"
-	"github.com/jmoiron/sqlx"
-	_ "github.com/lib/pq"
+	_ "github.com/mattn/go-sqlite3"
 )
 
-func InitSqlite(cfg Config) (*pgDb, error) {
-	if dbConn, err := sqlx.Connect("postgres", cfg.ConnectString); err != nil {
+type SqliteDb struct {
+	dbConn *sql.DB
+
+	sqlSelectAllUsers *sql.Stmt
+	sqlSelectUser     *sql.Stmt
+	sqlInsertUser     *sql.Stmt
+	sqlUpdateUser     *sql.Stmt
+	sqlDeleteUser     *sql.Stmt
+
+	sqlSelectAllProducts *sql.Stmt
+	sqlSelectProduct     *sql.Stmt
+	sqlInsertProduct     *sql.Stmt
+	sqlUpdateProduct     *sql.Stmt
+	sqlDeleteProduct     *sql.Stmt
+}
+
+// InitSqlite - init sqlite
+func InitSqlite(cfg string) (*SqliteDb, error) {
+	db, err := sql.Open("sqlite3", cfg)
+	if err != nil {
 		return nil, err
-	} else {
-		p := &pgDb{dbConn: dbConn}
-		if err := p.dbConn.Ping(); err != nil {
-			return nil, err
-		}
-		if err := p.createTablesIfNotExist(); err != nil {
-			return nil, err
-		}
-		if err := p.prepareSqlStatements(); err != nil {
-			return nil, err
-		}
-		return p, nil
 	}
+
+	result := &SqliteDb{dbConn: db}
+	result.createTablesIfNotExist()
+	result.prepareSQLStatements()
+	return result, nil
 }
 
-type pgDb struct {
-	dbConn *sqlx.DB
+func (db *SqliteDb) createTablesIfNotExist() error {
+	creatSQL := `
+	 CREATE TABLE IF NOT EXISTS products 
+	 ( 
+		 id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE, 
+		 name INTEGER NOT NULL UNIQUE, 
+		 description INTEGER NOT NULL, 
+		 image INTEGER, 
+		 price INTEGER DEFAULT 0, 
+		 create_on INTEGER NOT NULL, 
+		 update_on INTEGER NOT NULL
+	 );
 
-	sqlSelectPeople *sqlx.Stmt
-	sqlInsertPerson *sqlx.NamedStmt
-	sqlSelectPerson *sql.Stmt
-}
-
-func (p *pgDb) createTablesIfNotExist() error {
-	create_sql := `
-	 CREATE TABLE IF NOT EXISTS table_name
-(
-  id INT,
-  name VARCHAR NOT NULL,
-  description VARCHAR,
-  image BINARY(2048),
-  price INT DEFAULT 0,
-  create_on DATE DEFAULT CURRENT_DATE,
-  update_on DATE DEFAULT CURRENT_DATE
-);
-CREATE UNIQUE INDEX IF NOT EXISTS table_name_id_uindex ON table_name (id);
-CREATE UNIQUE INDEX IF NOT EXISTS table_name_name_uindex ON table_name (name);
-
-CREATE TABLE IF NOT EXISTS users
-(
-    id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
-    login varchar NOT NULL,
-    email varchar NOT NULL,
-    password varchar NOT NULL
-);
+	CREATE TABLE IF NOT EXISTS users 
+	( 
+		id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE, 
+		login varchar NOT NULL UNIQUE, 
+		email INTEGER NOT NULL UNIQUE, 
+		password INTEGER NOT NULL 
+	);
     `
-	if rows, err := p.dbConn.Query(create_sql); err != nil {
+	_, err := db.dbConn.Exec(creatSQL)
+	return err
+}
+
+func (db *SqliteDb) prepareSQLStatements() (err error) {
+
+	db.sqlSelectAllUsers, err = db.dbConn.Prepare("SELECT id, login, email, password FROM users")
+	if err != nil {
 		return err
-	} else {
-		rows.Close()
 	}
+
+	db.sqlSelectUser, err = db.dbConn.Prepare(`
+	SELECT id, login, email, password 
+	FROM users 
+	WHERE login = ? AND password = ? 
+	`)
+	if err != nil {
+		return err
+	}
+
+	db.sqlInsertUser, err = db.dbConn.Prepare(`
+	INSERT INTO users(login, email, password) VALUES (?, ?, ?)
+	`)
+	if err != nil {
+		return err
+	}
+
+	db.sqlUpdateUser, err = db.dbConn.Prepare(`
+	UPDATE users
+	SET login = ?, email = ?, password = ?
+	WHERE id = ?;
+	`)
+	if err != nil {
+		return err
+	}
+
+	db.sqlDeleteUser, err = db.dbConn.Prepare("DELETE FROM users WHERE id = ?")
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
-func (p *pgDb) prepareSqlStatements() (err error) {
-
-	if p.sqlSelectPeople, err = p.dbConn.Preparex(
-		"SELECT id, first, last FROM people",
-	); err != nil {
-		return err
-	}
-	if p.sqlInsertPerson, err = p.dbConn.PrepareNamed(
-		"INSERT INTO people (first, last) VALUES (:first, :last) " +
-			"RETURNING id, first, last",
-	); err != nil {
-		return err
-	}
-	if p.sqlSelectPerson, err = p.dbConn.Prepare(
-		"SELECT id, first, last FROM people WHERE id = $1",
-	); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (p *pgDb) SelectPeople() ([]*model.User, error) {
-	people := make([]*model.User, 0)
-	if err := p.sqlSelectPeople.Select(&people); err != nil {
+// GetAllUsers - return all users
+func (db *SqliteDb) GetAllUsers() ([]*model.User, error) {
+	users := make([]*model.User, 0)
+	rows, err := db.sqlSelectAllUsers.Query()
+	if err != nil {
 		return nil, err
 	}
-	return people, nil
+	defer rows.Close()
+
+	for rows.Next() {
+		var user model.User
+		err := rows.Scan(&user.Id, &user.UserName, &user.Email, &user.Password)
+		if err != nil {
+			return nil, err
+		}
+
+		users = append(users, &user)
+	}
+
+	return users, nil
+}
+
+func (db *SqliteDb) GetUser(login, password string) (*model.User, error) {
+	var user model.User
+	err := db.sqlSelectUser.QueryRow(&login, &password).
+		Scan(&user.Id, &user.UserName, &user.Email, &user.Password)
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
+func (db *SqliteDb) SetUser(user *model.User) error {
+	res, err := db.sqlInsertUser.Exec(&user.UserName, &user.Email, &user.Password)
+	if err != nil {
+		return err
+	}
+
+	lastID, err := res.LastInsertId()
+	if err != nil {
+		return err
+	}
+
+	user.Id = lastID
+	return nil
+}
+
+func (db *SqliteDb) UpdateUser(user *model.User) error {
+	_, err := db.sqlUpdateUser.Exec(&user.UserName, &user.Email, &user.Password, &user.Id)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

@@ -91,18 +91,18 @@ func (m *MongoDB) GetAllUsers() ([]*model.User, error) {
 	return result, err
 }
 
-func (m *MongoDB) GetUser(login, password string) (model.User, error) {
-	result := model.User{}
+func (m *MongoDB) GetUser(login, password string) (*model.User, error) {
+	var result model.User
 	err := m.users.Find(bson.M{"login": login, "password": password}).One(&result)
-	return result, err
+	return &result, err
 }
 
-func (m *MongoDB) SetUser(u model.User) error {
-	err := m.users.Insert(&u)
+func (m *MongoDB) SetUser(u *model.User) error {
+	err := m.users.Insert(u)
 	return err
 }
 
-func (m *MongoDB) UpdateUser(u model.User) error {
+func (m *MongoDB) UpdateUser(u *model.User) error {
 	err := m.users.Update(bson.M{"login": u.Email}, u)
 	return err
 }
@@ -113,18 +113,18 @@ func (m *MongoDB) GetAllProducts() ([]*model.Product, error) {
 	return result, err
 }
 
-func (m *MongoDB) GetProduct(productName string) (model.Product, error) {
-	result := model.Product{}
-	err := m.products.Find(bson.M{"name": productName}).One(&result)
-	return result, err
+func (m *MongoDB) GetProduct(productName string) (*model.Product, error) {
+	var result model.Product
+	err := m.products.Find(bson.M{"name": productName}).One(result)
+	return &result, err
 }
 
-func (m *MongoDB) SetProduct(p model.Product) error {
-	err := m.products.Insert(&p)
+func (m *MongoDB) SetProduct(p *model.Product) error {
+	err := m.products.Insert(p)
 	return err
 }
 
-func (m *MongoDB) UpdateProduct(p model.Product) error {
+func (m *MongoDB) UpdateProduct(p *model.Product) error {
 	err := m.products.Update(bson.M{"name": p.Name}, p)
 	return err
 }
