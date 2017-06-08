@@ -5,6 +5,7 @@ import (
 
 	"github.com/SealTV/handmade-shope/model"
 	_ "github.com/mattn/go-sqlite3"
+	"time"
 )
 
 type SqliteDb struct {
@@ -32,7 +33,8 @@ func InitSqlite(cfg string) (*SqliteDb, error) {
 
 	result := &SqliteDb{dbConn: db}
 	result.createTablesIfNotExist()
-	result.prepareSQLStatements()
+	result.prepareUesrsSQLStatements()
+	result.prepareProductsSQLStatements()
 	return result, nil
 }
 
@@ -41,27 +43,27 @@ func (db *SqliteDb) createTablesIfNotExist() error {
 	 CREATE TABLE IF NOT EXISTS products 
 	 ( 
 		 id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE, 
-		 name INTEGER NOT NULL UNIQUE, 
-		 description INTEGER NOT NULL, 
-		 image INTEGER, 
+		 name varchar NOT NULL UNIQUE, 
+		 description varchar NOT NULL, 
+		 image varchar, 
 		 price INTEGER DEFAULT 0, 
-		 create_on INTEGER NOT NULL, 
-		 update_on INTEGER NOT NULL
+		 create_on DATETIME NOT NULL, 
+		 update_on DATETIME NOT NULL
 	 );
 
 	CREATE TABLE IF NOT EXISTS users 
 	( 
 		id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE, 
 		login varchar NOT NULL UNIQUE, 
-		email INTEGER NOT NULL UNIQUE, 
-		password INTEGER NOT NULL 
+		email varchar NOT NULL UNIQUE, 
+		password varchar NOT NULL 
 	);
     `
 	_, err := db.dbConn.Exec(creatSQL)
 	return err
 }
 
-func (db *SqliteDb) prepareSQLStatements() (err error) {
+func (db *SqliteDb) prepareUesrsSQLStatements() (err error) {
 
 	db.sqlSelectAllUsers, err = db.dbConn.Prepare("SELECT id, login, email, password FROM users")
 	if err != nil {
@@ -94,6 +96,48 @@ func (db *SqliteDb) prepareSQLStatements() (err error) {
 	}
 
 	db.sqlDeleteUser, err = db.dbConn.Prepare("DELETE FROM users WHERE id = ?")
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (db *SqliteDb) prepareProductsSQLStatements() (err error) {
+
+	db.sqlSelectAllProducts, err = db.dbConn.Prepare(`
+	SELECT id, name, description, image, price, create_on, update_on
+	FROM products`)
+	if err != nil {
+		return err
+	}
+
+	db.sqlSelectProduct, err = db.dbConn.Prepare(`
+	SELECT id, name, description, image, price, create_on, update_on
+	FROM products 
+	WHERE name = ? 
+	`)
+	if err != nil {
+		return err
+	}
+
+	db.sqlInsertProduct, err = db.dbConn.Prepare(`
+	INSERT INTO products(name, description, image, price) VALUES (?, ?, ?, ?)
+	`)
+	if err != nil {
+		return err
+	}
+
+	db.sqlUpdateProduct, err = db.dbConn.Prepare(`
+	UPDATE products
+	SET name = ?, description = ?, image = ?, price = ?, update_on = ?
+	WHERE id = ?;
+	`)
+	if err != nil {
+		return err
+	}
+
+	db.sqlDeleteProduct, err = db.dbConn.Prepare("DELETE FROM products WHERE id = ?")
 	if err != nil {
 		return err
 	}
@@ -150,6 +194,107 @@ func (db *SqliteDb) SetUser(user *model.User) error {
 
 func (db *SqliteDb) UpdateUser(user *model.User) error {
 	_, err := db.sqlUpdateUser.Exec(&user.UserName, &user.Email, &user.Password, &user.Id)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+
+func (db *SqliteDb) DeleteUser(user *model.User) error {
+	_, err := db.sqlDeleteUser.Exec(&user.Id )
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (db *SqliteDb) GetAllProducts() ([]*model.Product, error) {
+	products := make([]*model.Product, 0)
+	rows, err := db.sqlSelectAllProducts.Query()
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var product model.Product
+		err := rows.Scan(
+			&product.Id,
+			&product.Name,
+			&product.Description,
+			&product.Image,
+			&product.Price,
+			&product.CreatedOn,
+			&product.UpdatedOn
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		products = append(products, &product)
+	}
+
+	return products, nil
+}
+
+func (db *SqliteDb) GetProduct(productName string) (*model.Product, error) {
+	var product model.Product
+	err := db.sqlSelectProduct.QueryRow(&productName).Scan(
+			&product.Id,
+			&product.Name,
+			&product.Description,
+			&product.Image,
+			&product.Price,
+			&product.CreatedOn,
+			&product.UpdatedOn
+		)
+	if err != nil {
+		return nil, err
+	}
+	return &product, nil
+}
+
+func (db *SqliteDb) SetProduct(p *model.Product) error {
+	res, err := db.sqlInsertProduct.Exec(
+		&p.Name,
+		&p.Description,
+		&p.Image,
+		&p.Price
+	)
+	if err != nil {
+		return err
+	}
+
+	lastID, err := res.LastInsertId()
+	if err != nil {
+		return err
+	}
+
+	user.Id = lastID
+	return nil
+}
+
+func (db *SqliteDb) UpdateProduct(p *model.Product) error {
+	_, err := db.sqlUpdateProduct.Exec(
+		&p.Name,
+		&p.Description,
+		&p.Image,
+		&p.Price,
+		&time.Now(),
+		&p.Id
+	)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (db *SqliteDb) DeleteProduct(p *model.Product) error {
+	_, err := db.sqlDeleteProduct.Exec(&p.Id )
 	if err != nil {
 		return err
 	}
