@@ -2,7 +2,7 @@ package db
 
 import (
 	"github.com/SealTV/handmade-shope/model"
-	"time"
+	time "time"
 )
 
 func (db *SqliteDb) prepareProductsSQLStatements() (err error) {
@@ -114,12 +114,13 @@ func (db *SqliteDb) SetProduct(p *model.Product) error {
 }
 
 func (db *SqliteDb) UpdateProduct(p *model.Product) error {
+	time := time.Now()
 	_, err := db.sqlUpdateProduct.Exec(
 		&p.Name,
 		&p.Description,
 		&p.Image,
 		&p.Price,
-		&time.Now(),
+		&time,
 		&p.Id,
 	)
 	if err != nil {
