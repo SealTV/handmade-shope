@@ -16,14 +16,16 @@ var router *gin.Engine
 var m *model.Model
 
 type config struct {
-	Host string
-	DB   db.MongoConfig
+	Host         string
+	SQLiteDBName string
+	DB           db.MongoConfig
 }
 
 func processFlags() *config {
 	cfg := &config{}
 
 	flag.StringVar(&cfg.Host, "listen", "localhost:3000", "HTTP listen spec")
+	flag.StringVar(&cfg.SQLiteDBName, "sqlite", "storage.sqlite", "SQLite database name")
 	flag.StringVar(&cfg.DB.Host, "host", "localhost:12017", "Mongo serve host")
 	flag.StringVar(&cfg.DB.Username, "user", "user", "Mongo user")
 	flag.StringVar(&cfg.DB.Password, "password", "", "Mongo password")
@@ -70,7 +72,7 @@ func main() {
 	cfg := processFlags()
 	fmt.Println(cfg)
 
-	db, err := db.InitMongoDB(cfg.DB.Host)
+	db, err := db.InitSqlite(cfg.SQLiteDBName)
 	if err != nil {
 		log.Printf("Error initializing database: %v\n", err)
 		log.Fatal(err)

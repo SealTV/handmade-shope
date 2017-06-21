@@ -9,6 +9,7 @@ import (
 // Product model
 type Product struct {
 	ID          bson.ObjectId `bson:"_id,omitempty" json:"id"`
+	Id          int64         `bson:"id,omitempty" json:"id"`
 	Name        string        `bson:"name" json:"name"`
 	Description string        `bson:"description" json:"description"`
 	Image       []byte        `bson:"image" json:"image"`
